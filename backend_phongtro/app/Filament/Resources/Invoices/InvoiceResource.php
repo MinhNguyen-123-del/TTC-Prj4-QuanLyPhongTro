@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\Invoices; // <-- ĐÃ SỬA CHUẨN ĐƯỜNG DẪN THƯ MỤC INVOICES
+namespace App\Filament\Resources\Invoices;
 
-use App\Filament\Resources\Invoices\Pages; // <-- ĐÃ SỬA CHUẨN ĐƯỜNG DẪN PAGES
+use App\Filament\Resources\Invoices\Pages;
 use App\Models\Invoice;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,7 +16,9 @@ use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\Action;
 use App\Filament\Resources\Invoices\InvoiceResource\RelationManagers\DetailsRelationManager;
+use App\Filament\Resources\Invoices\InvoiceResource\RelationManagers\PaymentsRelationManager;
 
 class InvoiceResource extends Resource
 {
@@ -26,6 +28,7 @@ class InvoiceResource extends Resource
     protected static ?string $navigationLabel = 'Hóa Đơn';
     protected static ?string $modelLabel = 'Hóa đơn';
     protected static ?string $pluralModelLabel = 'Danh sách Hóa đơn';
+    protected static string|\UnitEnum|null $navigationGroup = 'Quản lý Thuê';
 
     public static function form(Schema $schema): Schema
     {
@@ -118,12 +121,22 @@ class InvoiceResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->recordActions([
                 EditAction::make()->label('Sửa'),
                 DeleteAction::make()->label('Xóa'),
+                \Filament\Actions\Action::make('print')
+                    ->label('In PDF')
+                    ->icon('heroicon-o-printer')
+                    ->color('success')
+                    ->action(function ($record) {
+                        $record->load(['details', 'contract.room', 'contract.tenant']);
+                        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', ['invoice' => $record]);
+                        return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            "hoa-don-{$record->id}.pdf"
+                        );
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -136,6 +149,7 @@ class InvoiceResource extends Resource
     {
         return [
             DetailsRelationManager::class,
+            PaymentsRelationManager::class,
         ];
     }
 

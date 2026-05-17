@@ -9,12 +9,31 @@ class Tenant extends Model
 {
     use HasFactory;
 
-    // Cho phép lưu các cột này vào Database
+    protected $table = 'tnmtkhachthue';
+
     protected $fillable = [
-        'full_name',
-        'cccd',
-        'phone',
+        'user_id',
+        'fullname',
         'email',
+        'phone',
+        'cmnd',
         'address',
+        'avatar',
+        'status',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class, 'tenant_id');
+    }
+
+    public function maintenanceRequests()
+    {
+        return $this->hasMany(MaintenanceRequest::class, 'tenant_id');
+    }
 }

@@ -9,18 +9,15 @@ class RoomUtility extends Model
 {
     use HasFactory;
 
-    // Trỏ đúng vào tên bảng trong database
-    protected $table = 'room_utilities';
+    protected $table = 'tnmttienichphong';
 
-    // Các cột được phép thêm dữ liệu
     protected $fillable = [
         'room_id',
-        'utility_name'
+        'utility_name',
     ];
 
-    // Mối quan hệ ngược lại: 1 Tiện ích thuộc về 1 Phòng
     public function room()
     {
-        return $this->belongsTo(Room::class, 'room_id');
+        return $this->belongsTo(Room::class);
     }
 }

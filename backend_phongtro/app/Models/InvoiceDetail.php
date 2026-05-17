@@ -9,6 +9,8 @@ class InvoiceDetail extends Model
 {
     use HasFactory;
 
+    protected $table = 'tnmtchitiethodon';
+
     protected $fillable = [
         'invoice_id',
         'service_name',
@@ -17,7 +19,6 @@ class InvoiceDetail extends Model
         'amount',
     ];
 
-    // 1 Chi tiết thuộc về 1 Hóa đơn
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);

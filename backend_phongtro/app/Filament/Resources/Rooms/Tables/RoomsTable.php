@@ -6,7 +6,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ImageColumn; // <-- IMPORT CÔNG CỤ HIỂN THỊ ẢNH
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Table;
 
 class RoomsTable
@@ -15,12 +15,11 @@ class RoomsTable
     {
         return $table
             ->columns([
-                // --- CỘT HIỂN THỊ ẢNH Ở ĐẦU BẢNG ---
-                ImageColumn::make('image')
+                ImageColumn::make('images')
                     ->label('Ảnh')
-                    ->circular() // Cắt ảnh thành hình tròn cho hiện đại
-                    ->size(40), // Kích thước ảnh 40x40px
-                // -----------------------------------
+                    ->circular()
+                    ->size(40)
+                    ->stacked(),
 
                 TextColumn::make('landlord.fullname')
                     ->label('Chủ trọ')
@@ -81,7 +80,16 @@ class RoomsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\SelectFilter::make('status')
+                    ->label('Trạng thái')
+                    ->options([
+                        'available' => 'Còn trống',
+                        'occupied' => 'Đã thuê',
+                        'maintenance' => 'Bảo trì',
+                    ]),
+                \Filament\Tables\Filters\SelectFilter::make('floor')
+                    ->label('Tầng')
+                    ->options(fn () => \App\Models\Room::distinct()->orderBy('floor')->pluck('floor', 'floor')->toArray()),
             ])
             ->recordActions([
                 EditAction::make()->label('Sửa'),

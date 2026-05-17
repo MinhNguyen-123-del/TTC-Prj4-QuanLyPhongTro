@@ -1,166 +1,135 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/axios";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccessMsg("");
     setLoading(true);
+    setError("");
 
-    axios
-      .post("http://127.0.0.1:8000/api/login", {
+    try {
+      const response = await api.post("/login", {
         email: email,
         password: password,
-      })
-      .then((response) => {
-        // 1. Lưu Token
-        localStorage.setItem("token", response.data.token);
-
-        // 2. Lưu Role và gán mặc định nếu API chưa trả về
-        const userRole = response.data.user?.role || "khach_thue";
-        localStorage.setItem("role", userRole);
-
-        setSuccessMsg("Đăng nhập thành công!");
-        setLoading(false);
-
-        // 3. Chuyển hướng thông minh dựa theo Role
-        setTimeout(() => {
-          if (userRole === "admin" || userRole === "chu_tro") {
-            navigate("/quan-ly"); // Dành cho quản lý
-          } else {
-            navigate("/"); // Dành cho khách thuê
-          }
-        }, 3000);
-      })
-      .catch((error) => {
-        setLoading(false);
-        if (error.response && error.response.status === 401) {
-          setError("Email hoặc mật khẩu không chính xác!");
-        } else {
-          setError("Đã có lỗi kết nối đến máy chủ.");
-        }
       });
+
+      const token = response.data.access_token || response.data.token;
+
+      if (token) {
+        localStorage.setItem("token", token);
+
+        const userData = response.data.user || { email: email };
+        localStorage.setItem("user", JSON.stringify(userData));
+        if (userData.role) {
+          localStorage.setItem("role", userData.role);
+        }
+
+        navigate("/");
+      } else {
+        setError("Đăng nhập thất bại: Không nhận được Thẻ xác thực (Token)!");
+      }
+    } catch (err) {
+      console.error("Chi tiết lỗi:", err);
+      if (err.response && err.response.data) {
+        setError(
+          err.response.data.message || "Tài khoản hoặc mật khẩu không đúng!",
+        );
+      } else {
+        setError("Không thể kết nối đến máy chủ Backend!");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center bg-slate-50 px-4 relative overflow-hidden">
-      {/* Hiệu ứng nền mờ khi thành công */}
-      {successMsg && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 transition-opacity duration-300"></div>
-      )}
+    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center bg-slate-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-30 transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+      <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-emerald-500 rounded-full blur-[120px] opacity-20 transform translate-x-1/2 translate-y-1/2"></div>
 
-      {/* Thông báo thành công */}
-      {successMsg && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-10 rounded-3xl shadow-2xl flex flex-col items-center gap-6 z-50 text-center border border-slate-100 animate-fade-in">
-          <div className="bg-emerald-100 p-5 rounded-full">
-            <svg
-              className="w-16 h-16 text-emerald-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+      <div className="max-w-md w-full bg-white/10 backdrop-blur-2xl p-10 rounded-[2.5rem] shadow-2xl border border-white/20 relative z-10 animate-fade-in-up">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-blue-400 text-white shadow-lg shadow-blue-500/30 mb-6">
+            <span className="text-3xl">👤</span>
           </div>
-          <div className="space-y-2">
-            <h3 className="text-3xl font-extrabold text-slate-900">
-              {successMsg}
-            </h3>
-            {/* Đổi câu thông báo chung chung hơn */}
-            <p className="text-lg text-slate-600">
-              Đang đưa bạn vào hệ thống TNMT trong giây lát...
-            </p>
-          </div>
-          <div className="w-10 h-10 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mt-4"></div>
-        </div>
-      )}
-
-      <div
-        className={`max-w-md w-full bg-white rounded-2xl shadow-lg border border-slate-100 p-8 transition-all duration-300 ${successMsg ? "opacity-20 scale-95 pointer-events-none" : "z-10"}`}
-      >
-        <div className="text-center mb-8">
-          {/* Đổi Tiêu đề thành Đăng Nhập chung */}
-          <h2 className="text-3xl font-extrabold text-slate-900 mb-2">
+          <h2 className="text-4xl font-extrabold text-white mb-2 tracking-tight">
             Đăng Nhập
           </h2>
-          <p className="text-slate-500">Hệ thống Phòng Trọ TNMT</p>
+          <p className="text-blue-200 font-medium text-sm">
+            Quản lý phòng trọ và hóa đơn của bạn
+          </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm text-center font-medium">
-            {error}
-          </div>
-        )}
+        <form className="space-y-6" onSubmit={handleLogin}>
+          {error && (
+            <div className="bg-rose-500/20 text-rose-300 px-4 py-3 rounded-xl text-sm font-medium border border-rose-500/30 text-center backdrop-blur-md">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-              placeholder="nhapemail@tnmt.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">
-              Mật khẩu
-            </label>
-            <input
-              type="password"
-              required
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-bold text-white/90 mb-2 ml-1">
+                Địa chỉ Email
+              </label>
+              <input
+                type="email"
+                required
+                className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all backdrop-blur-sm shadow-inner"
+                placeholder="Ví dụ: khachthue@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-white/90 mb-2 ml-1">
+                Mật khẩu
+              </label>
+              <input
+                type="password"
+                required
+                className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all backdrop-blur-sm shadow-inner"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
           </div>
 
           <button
             type="submit"
-            disabled={loading || successMsg}
-            className={`w-full text-white font-bold py-3 rounded-xl transition-all shadow-md ${loading || successMsg ? "bg-slate-400 cursor-wait" : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5"}`}
+            disabled={loading}
+            className={`w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.4)] text-lg font-bold text-white transition-all duration-300 mt-8 ${
+              loading
+                ? "bg-blue-500/50 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-500 hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transform hover:-translate-y-1"
+            }`}
           >
-            {loading ? "Đang xử lý..." : "Đăng Nhập"}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin text-xl">⏳</span> Đang xử lý...
+              </span>
+            ) : (
+              "Đăng nhập ngay"
+            )}
           </button>
         </form>
 
-        <div className="mt-6 text-center flex flex-col gap-3">
-          {/* Thêm liên kết Đăng ký cho sinh viên/khách thuê */}
-          <p className="text-sm text-slate-600">
-            Chưa có tài khoản?{" "}
-            <Link
-              to="/dang-ky"
-              className="text-blue-600 font-bold hover:underline"
-            >
-              Đăng ký ngay
-            </Link>
-          </p>
+        <div className="mt-8 text-center text-sm text-white/60">
+          Chưa có tài khoản?{" "}
           <Link
-            to="/"
-            className="text-sm text-slate-500 hover:text-slate-800 transition-colors"
+            to="/dang-ky"
+            className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
           >
-            ← Quay lại trang chủ
+            Đăng ký ngay
           </Link>
         </div>
       </div>

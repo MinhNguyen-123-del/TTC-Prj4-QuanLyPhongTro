@@ -2,42 +2,42 @@
 
 namespace App\Filament\Resources\Invoices\InvoiceResource\RelationManagers;
 
-use Filament\Schemas\Schema; // Đã đổi Form thành Schema
+use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Actions\CreateAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 
 class DetailsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'details'; 
+    protected static string $relationship = 'details';
     protected static ?string $title = 'Chi tiết các khoản thu';
 
-    public function form(Schema $schema): Schema // Đã đổi Form thành Schema
+    public function form(Schema $schema): Schema
     {
         return $schema
-            ->components([ // Đã đổi ->schema([]) thành ->components([])
+            ->components([
                 TextInput::make('service_name')
-                    ->label('Tên khoản thu (Điện, Nước, Rác...)')
+                    ->label('Tên khoản thu')
                     ->required()
                     ->maxLength(255),
-                    
+
                 TextInput::make('quantity')
-                    ->label('Số lượng (kWh, Khối, Tháng...)')
+                    ->label('Số lượng')
                     ->required()
                     ->numeric()
                     ->default(1),
-                    
+
                 TextInput::make('unit_price')
                     ->label('Đơn giá')
                     ->required()
                     ->numeric(),
-                    
+
                 TextInput::make('amount')
                     ->label('Thành tiền')
                     ->required()
@@ -55,17 +55,15 @@ class DetailsRelationManager extends RelationManager
                 TextColumn::make('unit_price')->label('Đơn giá')->money('VND'),
                 TextColumn::make('amount')->label('Thành tiền')->money('VND')->color('danger'),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->headerActions([
                 CreateAction::make()->label('Thêm khoản thu'),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make()->label('Sửa'),
                 DeleteAction::make()->label('Xóa'),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()->label('Xóa đã chọn'),
                 ]),
